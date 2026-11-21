@@ -90,7 +90,7 @@ function parser() {
 				fi
 				;; 
 			--edit | --e)
-				if (( $# == 2 )); then
+				if (( $# >= 2 )) && [[ "${2}" != -* ]]; then
 					shift
 					__APPOINT_F__="${1}"
 				fi
