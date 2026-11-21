@@ -3,24 +3,24 @@
 # Compile C source files with clang and run the resulting binary.
 
 if [[ "${0}" != "${BASH_SOURCE[0]}" ]]; then
-	echo -e "Fatal: Usage bash runc.sh [flag] (options)"
+	echo -e "ERROR: Usage bash runc.sh [flag] (options)"
 	return 1 &>/dev/null
 fi
 
-BINF="pubbin"
-DIRF="bin"
-C_SRC_FILES=()
-FLAG=1
+__BINF__="pubbin"
+__DIRF__="bin"
+__FILE__=()
+__FLAG__=1
+__APPOINT_F__="nof"
 __STATIC__="off"
 __EDIT__="off"
-__APPOINT_F__="nof"
 __STD__="c23"
 
 #######################################
 # Parse command-line arguments into global compile settings.
 # Globals:
-#   C_SRC_FILES
-#   FLAG
+#   __FILE__
+#   __FLAG__
 #   __STATIC__
 #   __STD__
 # Arguments:
@@ -31,28 +31,28 @@ __STD__="c23"
 #   0 on success, 1 on invalid arguments.
 #######################################
 function parser() {
-	echo -e "Info : Parser start"
+	echo -e "INFO : Parser start"
 	while (( $# > 0 )); do
 		case "${1}" in 
 			--file | --f)
 				shift
 				if (( $# == 0 )) || [[ "${1}" == -* ]]; then
-					echo -e "Error: At least one actual argument for --file/--f must be provided"
+					echo -e "ERROR: At least one actual argument for --file/--f must be provided"
 					return 1
 				fi
 				while (( $# > 0 )) && [[ "${1}" != -* ]]; do
-					C_SRC_FILES+=("${1}")
+					__FILE__+=("${1}")
 					shift
 				done
 				;;
 			--static)
 				if (( $# < 2 )); then
-					echo -e "Error: --static ?, ?:{off/on}"
+					echo -e "ERROR: --static ?, ?:{off/on}"
 					return 1
 				fi
 				shift
 				if [[ "${1}" != "on" && "${1}" != "off" ]]; then
-					echo -e "Error: --static ?, ?:{off/on}. But you provided is ${1}"
+					echo -e "ERROR: --static ?, ?:{off/on}. But you provided is ${1}"
 					return 1
 				else
 					__STATIC__="${1}"
@@ -61,12 +61,12 @@ function parser() {
 				;;
 			--std)
 				if (( $# < 2 )); then
-					echo -e "Error: --std ?, ?:{99,11,17,18,23}"
+					echo -e "ERROR: --std ?, ?:{99,11,17,18,23}"
 					return 1
 				fi
 				shift
 				if [[ "${1}" != "99" && "${1}" != "11" && "${1}" != "17" ]] && [[ "${1}" != "18" && "${1}" != "23" ]]; then
-					echo -e "Error: -std ?, ?:{99,11,17,18,23}. But you provided is ${1}"
+					echo -e "ERROR: -std ?, ?:{99,11,17,18,23}. But you provided is ${1}"
 					return 1;
 				else
 					case "${1}" in
@@ -94,25 +94,25 @@ function parser() {
 					shift
 					__APPOINT_F__="${1}"
 				fi
-				shift
 				__EDIT__="on"
+				shift
 				;;
 			*)
-				echo -e "Panic: Unknown parameter :("
-				FLAG=1
+				echo -e "PANIC: Unknown parameter :("
+				__FLAG__=1
 				return 1
 			;;
 	    esac
 	done
-	FLAG=0
+	__FLAG__=0
 }
 
 #######################################
 # Compile the collected C sources with clang and run the binary.
 # Globals:
-#   BINF
-#   DIRF
-#   C_SRC_FILES
+#   __BINF__
+#   __DIRF__
+#   __FILE__
 #   __STATIC__
 #   __STD__
 # Arguments:
@@ -121,45 +121,45 @@ function parser() {
 #   Writes progress messages and program output to stdout.
 #######################################
 function runc() {
-	echo -e "Info : Running compile ..."
+	echo -e "INFO : Running compile ..."
 
 	local ret
 
 	if [[ "on" == "${__EDIT__}" && "nof" == "${__APPOINT_F__}" ]]; then
-		nvim "${C_SRC_FILES[0]}"
+		nvim "${__FILE__[0]}"
 	elif [[ "on" == "${__EDIT__}" && "nof" != "${__APPOINT_F__}" ]]; then
 		local flag_=1
-		for f in "${C_SRC_FILES[@]}"; do
+		for f in "${__FILE__[@]}"; do
 			if cmp -s "${__APPOINT_F__}" "${f}"; then
 				flag_=0
 				nvim "${__APPOINT_F__}"
 			fi
 		done
 		if [[ "1" == "${flag_}" ]]; then
-			echo -e "Panic: Can't found file ${__APPOINT_F__}"
+			echo -e "PANIC: Can't found file ${__APPOINT_F__}"
 			return 1
 		fi
 	fi
 
 	if [[ "on" == "${__STATIC__}" ]]; then
-		clang -std="${__STD__}" -static "${C_SRC_FILES[@]}" -o "${DIRF}/${BINF}"
+		clang -std="${__STD__}" -static "${__FILE__[@]}" -o "${__DIRF__}/${__BINF__}"
 	else
-		clang -std="${__STD__}" "${C_SRC_FILES[@]}" -o "${DIRF}/${BINF}"
+		clang -std="${__STD__}" "${__FILE__[@]}" -o "${__DIRF__}/${__BINF__}"
 	fi
 
 	ret="${?}"
 
 	if [[ 0 == "${ret}" ]]; then
-		bin/pubbin
+		"${__DIRF__}/${__BINF__}"
 	else
-		echo -e "Panic: run bin/pubbin failed !"
+		echo -e "PANIC: run ${__DIRF__}/${__BINF__} failed !"
 	fi
 }
 
 #######################################
 # Parse arguments, then compile and run the sources.
 # Globals:
-#   FLAG
+#   __FLAG__
 # Arguments:
 #   $@: program options forwarded to parser.
 # Outputs:
@@ -170,8 +170,8 @@ function runc() {
 function main() {
 	parser "${@}"
 
-	if [[ $FLAG -ne 0 ]]; then
-		echo -e "Error: Current is uncompiliable qualification"
+	if [[ $__FLAG__ -ne 0 ]]; then
+		echo -e "ERROR: Current is uncompiliable qualification"
 		return 1
 	fi
 
