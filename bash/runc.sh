@@ -127,7 +127,7 @@ function runc() {
 
 	if [[ "on" == "${__EDIT__}" && "nof" == "${__APPOINT_F__}" ]]; then
 		nvim "${C_SRC_FILES[0]}"
-	elif [[ "on" == "${__APPOINT_F__}" && "nof" != "${__APPOINT_F__}" ]]; then
+	elif [[ "on" == "${__EDIT__}" && "nof" != "${__APPOINT_F__}" ]]; then
 		local flag_=1
 		for f in "${C_SRC_FILES[@]}"; do
 			if cmp -s "${__APPOINT_F__}" "${f}"; then
