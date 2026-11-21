@@ -13,6 +13,7 @@ C_SRC_FILES=()
 FLAG=1
 __STATIC__="off"
 __EDIT__="off"
+__APPOINT_F__="nof"
 __STD__="c23"
 
 #######################################
@@ -89,6 +90,10 @@ function parser() {
 				fi
 				;; 
 			--edit | --e)
+				if (( $# == 2 )); then
+					shift
+					__APPOINT_F__="${1}"
+				fi
 				shift
 				__EDIT__="on"
 				;;
@@ -120,8 +125,20 @@ function runc() {
 
 	local ret
 
-	if [[ "on" == "${__EDIT__}" ]]; then
+	if [[ "on" == "${__EDIT__}" && "nof" == "${__APPOINT_F__}" ]]; then
 		nvim "${C_SRC_FILES[0]}"
+	elif [[ "on" == "${__APPOINT_F__}" && "nof" != "${__APPOINT_F__}" ]]; then
+		local flag_=1
+		for f in "${C_SRC_FILES[@]}"; do
+			if cmp -s "${__APPOINT_F__}" "${f}"; then
+				flag_=0
+				nvim "${__APPOINT_F__}"
+			fi
+		done
+		if [[ "1" == "${flag_}" ]]; then
+			echo -e "Panic: Can't found file ${__APPOINT_F__}"
+			return 1
+		fi
 	fi
 
 	if [[ "on" == "${__STATIC__}" ]]; then
