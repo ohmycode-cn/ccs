@@ -11,10 +11,7 @@
 
 # DIRECTORIES: NORMAL
 build/
-
-# DIRECTORIES: TRACK STRUCTURE ONLY
-bin/*
-!bin/.gitkeep
+bin/
 
 # FILES: HIDE
 # mimocode session about
@@ -35,6 +32,9 @@ Desktop.ini
 
 # Generic logs
 *.log
+
+# Generic c test files
+*.c
 
 # Secrets
 .env
