@@ -12,6 +12,7 @@ DIRF="bin"
 C_SRC_FILES=()
 FLAG=1
 __STATIC__="off"
+__EDIT__="off"
 __STD__="c23"
 
 #######################################
@@ -86,6 +87,10 @@ function parser() {
 						esac
 					shift
 				fi
+				;; 
+			--edit | --e)
+				shift
+				__EDIT__="on"
 				;;
 			*)
 				echo -e "Panic: Unknown parameter :("
@@ -114,6 +119,10 @@ function runc() {
 	echo -e "Info : Running compile ..."
 
 	local ret
+
+	if [[ "on" == "${__EDIT__}" ]]; then
+		nvim "${C_SRC_FILES[0]}"
+	fi
 
 	if [[ "on" == "${__STATIC__}" ]]; then
 		clang -std="${__STD__}" -static "${C_SRC_FILES[@]}" -o "${DIRF}/${BINF}"
