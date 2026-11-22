@@ -1,5 +1,23 @@
 #!/bin/bash
-#
+
+# *****************************************************************************
+# * Author     : ohmycode-cn
+# * Email      : ohcode@163.com
+# * Date       : 2026-11-23
+# * Language   : bash
+# * Standard   : bash 5.0 or higher
+# * License    : MIT (see LICENSE for the additional terms)
+# * Description:
+# *   A quick edit/compile helper for a single C/C++ source file, or for
+# *   a small set of files. The output binary is always `pubbin` ("Public
+# *   Binary"), written to `bin/` at the project root. The script never
+# *   creates `bin/` itself: if the directory is absent, compilation is
+# *   skipped. ANSI highlighting is disabled by default so that logs stay
+# *   traceable. To keep the calling shell clean, everything runs in a
+# *   subshell, and the script always ends with `exit 0`, no matter
+# *   whether the compiled program succeeds.
+# *****************************************************************************
+
 # Compile C source files with clang and run the resulting binary.
 
 if [[ "${0}" != "${BASH_SOURCE[0]}" ]]; then
@@ -15,6 +33,41 @@ __APPOINT_F__="nof"
 __STATIC__="off"
 __EDIT__="off"
 __STD__="c23"
+
+###############################################################################
+# __START:
+# ANSI highlight constant value define zone
+
+__ANSI__="\033"
+__FONT__="[0;"
+__CHAR__="m"
+
+readonly __ANSI__
+readonly __FONT__
+readonly __CHAR__
+
+__RESET__="${__ANSI__}${__FONT__}0${__CHAR__}"
+__BLACK__="${__ANSI__}${__FONT__}30${__CHAR__}"
+__RED__="${__ANSI__}${__FONT__}31${__CHAR__}"
+__GREEN__="${__ANSI__}${__FONT__}32${__CHAR__}"
+__YELLOW__="${__ANSI__}${__FONT__}33${__CHAR__}"
+__BLUE__="${__ANSI__}${__FONT__}34${__CHAR__}"
+__PURPLE__="${__ANSI__}${__FONT__}35${__CHAR__}"
+__CYAN__="${__ANSI__}${__FONT__}36${__CHAR__}"
+__WHITE__="${__ANSI__}${__FONT__}37${__CHAR__}"
+
+readonly __RESET__
+readonly __BLACK__
+readonly __RED__
+readonly __GREEN__
+readonly __YELLOW__
+readonly __BLUE__
+readonly __PURPLE__
+readonly __CYAN__
+readonly __WHITE__
+
+# __ENDOF;
+###############################################################################
 
 #######################################
 # Parse command-line arguments into global compile settings.
