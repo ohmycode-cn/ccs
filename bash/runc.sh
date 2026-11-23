@@ -37,6 +37,8 @@ __STD__="c23"
 ###############################################################################
 # __START:
 # ANSI highlight constant value define zone
+# Define: 
+# reset, black, red, green, yellow, blue, purple, cyan, white
 
 __ANSI__="\033"
 __FONT__="[0;"
@@ -69,6 +71,269 @@ readonly __WHITE__
 # __ENDOF;
 ###############################################################################
 
+##############################################################################
+#__START:
+#Define: constant -> messages level
+#        INFO, ERROR, DONE, PANIC
+
+#IO Stream controller
+__IO_FILE__="$(pwd)/iofile.txt"
+__IO_TURN__="false"
+
+#######################################
+# Emit an INFO-level message with optional ANSI coloring and log-file write.
+# Globals:
+#   __IO_TURN__
+#   __IO_FILE__
+#   __GREEN__
+#   __CYAN__
+#   __RESET__
+# Arguments:
+#   $@: --color, --stder, --msgio <text>
+# Outputs:
+#   Writes "INFO : <text>" to stdout, or to stderr with --stder.
+#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#######################################
+function io_info() {
+	local color="false"
+	local stder="false"
+	local msgio=""
+	while (( $# > 0 )); do
+		case "${1}" in
+			--color)
+				shift
+				color="true"
+				;;
+			--stder)
+				shift
+				stder="true"
+				;;
+			--msgio)
+				shift
+				msgio="${1}"
+				shift
+				;;
+			*)
+				echo -e "Inner Error: Unknown parameter type '?' for '${1}'"
+				shift
+				;;
+		esac
+	done
+
+	local pfx_hc=""
+	local pfx_bc=""
+	local set_re=""
+
+	if [[ "true" == "${color}" ]]; then
+		pfx_hc="${__GREEN__}"
+		pfx_bc="${__CYAN__}"
+		set_re="${__RESET__}"
+	fi
+
+	if [[ "false" == "${stder}" ]]; then
+		# io out -> stdout
+		echo -e "${pfx_hc}INFO ${set_re}: ${pfx_bc}${msgio}${set_re}"
+	else
+		# io out -> stderr
+		echo -e "${pfx_hc}INFO ${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
+	fi
+
+	if [[ "true" == "${__IO_TURN__}" ]]; then
+		echo -e "INFO : ${msgio}" >> "${__IO_FILE__}"
+	fi
+}
+
+#######################################
+# Emit an ERROR-level message with optional ANSI coloring and log-file write.
+# Globals:
+#   __IO_TURN__
+#   __IO_FILE__
+#   __RED__
+#   __YELLOW__
+#   __RESET__
+# Arguments:
+#   $@: --color, --stder, --msgio <text>
+# Outputs:
+#   Writes "ERROR: <text>" to stdout, or to stderr with --stder.
+#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#######################################
+function io_error() {
+	local color="false"
+	local stder="false"
+	local msgio=""
+	while (( $# > 0 )); do
+		case "${1}" in
+			--color)
+				shift
+				color="true"
+				;;
+			--stder)
+				shift
+				stder="true"
+				;;
+			--msgio)
+				shift
+				msgio="${1}"
+				shift
+				;;
+			*)
+				echo -e "Inner Error: Unknown parameter type '?' for '${1}'"
+				shift
+				;;
+		esac
+	done
+
+	local pfx_hc=""
+	local pfx_bc=""
+	local set_re=""
+
+	if [[ "true" == "${color}" ]]; then
+		pfx_hc="${__RED__}"
+		pfx_bc="${__YELLOW__}"
+		set_re="${__RESET__}"
+	fi
+
+	if [[ "false" == "${stder}" ]]; then
+		# io out -> stdout
+		echo -e "${pfx_hc}ERROR${set_re}: ${pfx_bc}${msgio}${set_re}"
+	else
+		# io out -> stderr
+		echo -e "${pfx_hc}ERROR${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
+	fi
+
+	if [[ "true" == "${__IO_TURN__}" ]]; then
+		echo -e "ERROR: ${msgio}" >> "${__IO_FILE__}"
+	fi
+}
+
+#######################################
+# Emit a PANIC-level message with optional ANSI coloring and log-file write.
+# Globals:
+#   __IO_TURN__
+#   __IO_FILE__
+#   __PURPLE__
+#   __RED__
+#   __RESET__
+# Arguments:
+#   $@: --color, --stder, --msgio <text>
+# Outputs:
+#   Writes "PANIC: <text>" to stdout, or to stderr with --stder.
+#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#######################################
+function io_panic() {
+	local color="false"
+	local stder="false"
+	local msgio=""
+	while (( $# > 0 )); do
+		case "${1}" in
+			--color)
+				shift
+				color="true"
+				;;
+			--stder)
+				shift
+				stder="true"
+				;;
+			--msgio)
+				shift
+				msgio="${1}"
+				shift
+				;;
+			*)
+				echo -e "Inner Error: Unknown parameter type '?' for '${1}'"
+				shift
+				;;
+		esac
+	done
+
+	local pfx_hc=""
+	local pfx_bc=""
+	local set_re=""
+
+	if [[ "true" == "${color}" ]]; then
+		pfx_hc="${__PURPLE__}"
+		pfx_bc="${__RED__}"
+		set_re="${__RESET__}"
+	fi
+
+	if [[ "false" == "${stder}" ]]; then
+		# io out -> stdout
+		echo -e "${pfx_hc}PANIC${set_re}: ${pfx_bc}${msgio}${set_re}"
+	else
+		# io out -> stderr
+		echo -e "${pfx_hc}PANIC${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
+	fi
+
+	if [[ "true" == "${__IO_TURN__}" ]]; then
+		echo -e "PANIC: ${msgio}" >> "${__IO_FILE__}"
+	fi
+}
+
+#######################################
+# Emit a DONE-level message with optional ANSI coloring and log-file write.
+# Globals:
+#   __IO_TURN__
+#   __IO_FILE__
+#   __BLUE__
+#   __GREEN__
+#   __RESET__
+# Arguments:
+#   $@: --color, --stder, --msgio <text>
+# Outputs:
+#   Writes "DONE : <text>" to stdout, or to stderr with --stder.
+#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#######################################
+function io_done() {
+	local color="false"
+	local stder="false"
+	local msgio=""
+	while (( $# > 0 )); do
+		case "${1}" in
+			--color)
+				shift
+				color="true"
+				;;
+			--stder)
+				shift
+				stder="true"
+				;;
+			--msgio)
+				shift
+				msgio="${1}"
+				shift
+				;;
+			*)
+				echo -e "Inner Error: Unknown parameter type '?' for '${1}'"
+				shift
+				;;
+		esac
+	done
+
+	local pfx_hc=""
+	local pfx_bc=""
+	local set_re=""
+
+	if [[ "true" == "${color}" ]]; then
+		pfx_hc="${__BLUE__}"
+		pfx_bc="${__GREEN__}"
+		set_re="${__RESET__}"
+	fi
+
+	if [[ "false" == "${stder}" ]]; then
+		# io out -> stdout
+		echo -e "${pfx_hc}DONE ${set_re}: ${pfx_bc}${msgio}${set_re}"
+	else
+		# io out -> stderr
+		echo -e "${pfx_hc}DONE ${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
+	fi
+
+	if [[ "true" == "${__IO_TURN__}" ]]; then
+		echo -e "DONE : ${msgio}" >> "${__IO_FILE__}"
+	fi
+}
+
+#function help() {}
+
 #######################################
 # Parse command-line arguments into global compile settings.
 # Globals:
@@ -76,21 +341,26 @@ readonly __WHITE__
 #   __FLAG__
 #   __STATIC__
 #   __STD__
+#   __EDIT__
+#   __APPOINT_F__
+#   __IO_TURN__
+#   __IO_FILE__
 # Arguments:
-#   $@: --file/--f <src>..., --static on|off, --std 11|17|23
+#   $@: --file/--f <src>..., --static on|off, --std 99|11|17|18|23,
+#       --edit/--e (file), --iofile/--iof
 # Outputs:
 #   Writes status and error messages to stdout.
 # Returns:
 #   0 on success, 1 on invalid arguments.
 #######################################
 function parser() {
-	echo -e "INFO : Parser start"
+	io_info --color --msgio "Parser start"
 	while (( $# > 0 )); do
 		case "${1}" in 
 			--file | --f)
 				shift
 				if (( $# == 0 )) || [[ "${1}" == -* ]]; then
-					echo -e "ERROR: At least one actual argument for --file/--f must be provided"
+					io_error --color --msgio "At least one actual argument for --file/--f must be provided"
 					return 1
 				fi
 				while (( $# > 0 )) && [[ "${1}" != -* ]]; do
@@ -100,12 +370,12 @@ function parser() {
 				;;
 			--static)
 				if (( $# < 2 )); then
-					echo -e "ERROR: --static ?, ?:{off/on}"
+					io_error --color --msgio "--static ?, ?:{off/on}"
 					return 1
 				fi
 				shift
 				if [[ "${1}" != "on" && "${1}" != "off" ]]; then
-					echo -e "ERROR: --static ?, ?:{off/on}. But you provided is ${1}"
+					io_error --color --msgio "--static ?, ?:{off/on}. But you provided is ${1}"
 					return 1
 				else
 					__STATIC__="${1}"
@@ -114,12 +384,12 @@ function parser() {
 				;;
 			--std)
 				if (( $# < 2 )); then
-					echo -e "ERROR: --std ?, ?:{99,11,17,18,23}"
+					io_error --color --msgio "--std ?, ?:{99,11,17,18,23}"
 					return 1
 				fi
 				shift
 				if [[ "${1}" != "99" && "${1}" != "11" && "${1}" != "17" ]] && [[ "${1}" != "18" && "${1}" != "23" ]]; then
-					echo -e "ERROR: -std ?, ?:{99,11,17,18,23}. But you provided is ${1}"
+					io_error --color --msgio "-std ?, ?:{99,11,17,18,23}. But you provided is ${1}"
 					return 1;
 				else
 					case "${1}" in
@@ -150,8 +420,13 @@ function parser() {
 				__EDIT__="on"
 				shift
 				;;
+			--iofile | --iof)
+				__IO_TURN__="true"
+				echo "" > "${__IO_FILE__}" # clean last log.
+				shift
+				;;
 			*)
-				echo -e "PANIC: Unknown parameter :("
+				io_panic --color --msgio "Unknown parameter :("
 				__FLAG__=1
 				return 1
 			;;
@@ -168,13 +443,15 @@ function parser() {
 #   __FILE__
 #   __STATIC__
 #   __STD__
+#   __EDIT__
+#   __APPOINT_F__
 # Arguments:
 #   None
 # Outputs:
 #   Writes progress messages and program output to stdout.
 #######################################
 function runc() {
-	echo -e "INFO : Running compile ..."
+	io_info --color --msgio "Running compile ..."
 
 	local ret
 
@@ -189,7 +466,7 @@ function runc() {
 			fi
 		done
 		if [[ "1" == "${flag_}" ]]; then
-			echo -e "PANIC: Can't found file ${__APPOINT_F__}"
+			io_panic --color --msgio "Can't found file ${__APPOINT_F__}"
 			return 1
 		fi
 	fi
@@ -205,7 +482,7 @@ function runc() {
 	if [[ 0 == "${ret}" ]]; then
 		"${__DIRF__}/${__BINF__}"
 	else
-		echo -e "PANIC: run ${__DIRF__}/${__BINF__} failed !"
+		io_panic --color --msgio "Run ${__DIRF__}/${__BINF__} failed !"
 	fi
 }
 
@@ -224,7 +501,7 @@ function main() {
 	parser "${@}"
 
 	if [[ $__FLAG__ -ne 0 ]]; then
-		echo -e "ERROR: Current is uncompiliable qualification"
+		io_error --color --msgio "Current is uncompiliable qualification"
 		return 1
 	fi
 
