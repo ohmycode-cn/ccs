@@ -332,7 +332,35 @@ function io_done() {
 	fi
 }
 
-#function help() {}
+function ifmt() {
+	local color="${1}"
+	local msgio="${2}"
+	if [[ "true" == "${color}" ]]; then
+		echo -e "${__PURPLE__}${msgio}${__RESET__}"
+	else
+		echo -e "${msgio}"
+	fi
+}
+
+function help_doc() {
+	io_info --color --msgio "WELCOME TO RUNC.SH HELP DOC"
+	local color="true"
+	ifmt "${color}" ""
+	ifmt "${color}" "Usage: bash runc.sh [flag] (options)"
+	ifmt "${color}" ""
+	ifmt "${color}" "Flags:"
+	ifmt "${color}" "  --file, --f <src>...   Collect C source files to compile and run"
+	ifmt "${color}" "  --static on|off        Toggle static linking (default: off)"
+	ifmt "${color}" "  --std 99|11|17|18|23   Select the C standard (default: 23)"
+	ifmt "${color}" "  --edit, --e [file]     Open [file] (or the first source) in nvim before build"
+	ifmt "${color}" "  --iofile, --iof        Write a plain log to ./iofile.txt"
+	ifmt "${color}" "  --help                 Show this help document"
+	ifmt "${color}" ""
+	ifmt "${color}" "Example: bash runc.sh --file main.c --std 23 --edit main.c"
+	ifmt "${color}" ""
+	ifmt "${color}" "Output : ${__DIRF__}/${__BINF__}"
+	ifmt "${color}" "Note   : ${__DIRF__}/ must exist beforehand, the script never creates it"
+}
 
 #######################################
 # Parse command-line arguments into global compile settings.
@@ -425,6 +453,12 @@ function parser() {
 				echo "" > "${__IO_FILE__}" # clean last log.
 				shift
 				;;
+			--help)
+				shift
+				help_doc
+				__FLAG__=2
+				return 1
+				;;
 			*)
 				io_panic --color --msgio "Unknown parameter :("
 				__FLAG__=1
@@ -433,6 +467,7 @@ function parser() {
 	    esac
 	done
 	__FLAG__=0
+	io_done --color --msgio "settings: {compilation-std:${__STD__}}"
 }
 
 #######################################
@@ -499,6 +534,11 @@ function runc() {
 #######################################
 function main() {
 	parser "${@}"
+
+	if [[ $__FLAG__ -eq 2 ]]; then
+		# If runc.sh --help ...... exit 0
+		return 1
+	fi
 
 	if [[ $__FLAG__ -ne 0 ]]; then
 		io_error --color --msgio "Current is uncompiliable qualification"
