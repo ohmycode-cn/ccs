@@ -332,6 +332,108 @@ function io_done() {
 	fi
 }
 
+#######################################
+# Emit a continuation message (indented, no level tag) with optional body
+# coloring and log-file write.
+# Globals:
+#   __IO_TURN__
+#   __IO_FILE__
+#   __BLACK__
+#   __RED__
+#   __GREEN__
+#   __YELLOW__
+#   __BLUE__
+#   __PURPLE__
+#   __CYAN__
+#   __WHITE__
+#   __RESET__
+# Arguments:
+#   $@: --color [black|red|green|yellow|blue|purple|cyan|white],
+#       --stder, --msgio <text>
+# Outputs:
+#   Writes "       <text>" to stdout, or to stderr with --stder.
+#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#######################################
+function io_continue() {
+	local color="false"
+	local stder="false"
+	local nasi_="none"
+	local msgio=""
+	while (( $# > 0 )); do
+		case "${1}" in
+			--color)
+				if (( $# >= 2 )) && [[ "${2}" != -* ]]; then
+					shift
+					nasi_="${1}"
+				fi
+				shift
+				color="true"
+				;;
+			--stder)
+				shift
+				stder="true"
+				;;
+			--msgio)
+				shift
+				msgio="${1}"
+				shift
+				;;
+			*)
+				echo -e "Inner Error: Unknown parameter type '?' for '${1}'"
+				shift
+				;;
+		esac
+	done
+
+	local pfx_bc=""
+	local set_re=""
+
+	if [[ "true" == "${color}" ]]; then
+		set_re="${__RESET__}"
+		case "${nasi_}" in
+			"black")
+				pfx_bc="${__BLACK__}"
+				;;
+			"red")
+				pfx_bc="${__RED__}"
+				;;
+			"green")
+				pfx_bc="${__GREEN__}"
+				;;
+			"yellow")
+				pfx_bc="${__YELLOW__}"
+				;;
+			"blue")
+				pfx_bc="${__BLUE__}"
+				;;
+			"purple")
+				pfx_bc="${__PURPLE__}"
+				;;
+			"cyan")
+				pfx_bc="${__CYAN__}"
+				;;
+			"white")
+				pfx_bc="${__WHITE__}"
+				;;
+			*)
+				pfx_bc=""
+				;;
+		esac
+	fi
+
+	if [[ "false" == "${stder}" ]]; then
+		# io out -> stdout
+		echo -e "       ${pfx_bc}${msgio}${set_re}"
+	else
+		# io out -> stderr
+		echo -e "       ${pfx_bc}${msgio}${set_re}" >&2
+	fi
+
+	if [[ "true" == "${__IO_TURN__}" ]]; then
+		echo -e "       ${msgio}" >> "${__IO_FILE__}"
+	fi
+}
+
 function ifmt() {
 	local color="${1}"
 	local msgio="${2}"
@@ -533,6 +635,12 @@ function runc() {
 #   0 on success, 1 if argument parsing fails.
 #######################################
 function main() {
+	if (( $# == 0 )); then
+		io_panic --color --msgio "You must provide optional parameters"
+		io_continue --color "red" --msgio "You can run 'bash runc.sh --help' get more help"
+		return 1
+	fi
+
 	parser "${@}"
 
 	if [[ $__FLAG__ -eq 2 ]]; then
