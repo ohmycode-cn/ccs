@@ -18,7 +18,7 @@
 # *   whether the compiled program succeeds.
 # *****************************************************************************
 
-# Compile C source files with clang and run the resulting binary.
+# Compile C source files with the selected compiler and run the resulting binary.
 
 if [[ "${0}" != "${BASH_SOURCE[0]}" ]]; then
 	echo -e "ERROR: Usage: bash runc.sh [flag] (options)"
@@ -33,6 +33,13 @@ __EDIT_FILE__="nof"
 __STATIC_LINK__="off"
 __EDIT_MODE__="off"
 __C_STD__="c23"
+__COMPILER__="clang"
+__CMP_LIST__=(
+	"clang"
+	"clang++"
+	"g++"
+	"gcc"
+)
 
 ###############################################################################
 # __START:
@@ -475,6 +482,7 @@ function help_doc() {
 	ifmt "${color}" "  --file, --f <src>...   Collect C source files to compile and run"
 	ifmt "${color}" "  --static on|off        Toggle static linking (default: off)"
 	ifmt "${color}" "  --std 99|11|17|18|23   Select the C standard (default: 23)"
+	ifmt "${color}" "  --compile, --cmp        Select the compiler: clang|clang++|gcc|g++ (default: clang)"
 	ifmt "${color}" "  --edit, --e [file]     Open [file] (or the first source) in nvim before build"
 	ifmt "${color}" "  --iofile, --iof        Write a plain log to ./iofile.txt"
 	ifmt "${color}" "  --help                 Show this help document"
@@ -492,13 +500,14 @@ function help_doc() {
 #   __PARSE_STATUS__
 #   __STATIC_LINK__
 #   __C_STD__
+#   __COMPILER__
 #   __EDIT_MODE__
 #   __EDIT_FILE__
 #   __IO_LOG_ENABLED__
 #   __IO_LOG_FILE__
 # Arguments:
 #   $@: --file/--f <src>..., --static on|off, --std 99|11|17|18|23,
-#       --edit/--e (file), --iofile/--iof
+#       --edit/--e (file), --iofile/--iof, --compile/--cmp (name)
 # Outputs:
 #   Writes status and error messages to stdout.
 # Returns:
@@ -582,6 +591,13 @@ function parser() {
 				__PARSE_STATUS__=2
 				return 1
 				;;
+			--compile | --cmp)
+				if (( $# >= 2 )) && [[ "${2}" != -* ]]; then
+					shift
+					__COMPILER__="${1}"
+				fi
+				shift
+				;;
 			*)
 				io_panic --color --msgio "Unknown parameter :("
 				__PARSE_STATUS__=1
@@ -589,6 +605,7 @@ function parser() {
 			;;
 	    esac
 	done
+	io_info --color --msgio "Current compiler: '${__COMPILER__}'"
 	io_done --color --msgio "edit file: ${__EDIT_FILE__}"
 	io_done --color --msgio "settings : {compilation-std:${__C_STD__}}"
 	if (( ${#__SRC_FILES__} == 0 )); then
@@ -600,7 +617,7 @@ function parser() {
 }
 
 #######################################
-# Compile the collected C sources with clang and run the binary.
+# Compile the collected C sources with the selected compiler and run the binary.
 # Globals:
 #   __BIN_NAME__
 #   __BIN_DIR__
@@ -609,6 +626,8 @@ function parser() {
 #   __C_STD__
 #   __EDIT_MODE__
 #   __EDIT_FILE__
+#   __COMPILER__
+#   __CMP_LIST__
 # Arguments:
 #   None
 # Outputs:
@@ -635,10 +654,24 @@ function runc() {
 		fi
 	fi
 
+	local exec_cmp="false"
+	for i in "${__CMP_LIST__[@]}"; do
+		if [[ "${i}" == "${__COMPILER__}" ]]; then
+			exec_cmp="true"
+			break
+		fi
+	done
+
+	if [[ "false" == "${exec_cmp}" ]]; then
+		io_panic --color --msgio "Unknown compiler '${__COMPILER__}' :( !"
+		io_continue --color --msgio "Run 'bash runc.sh --help' to get more help"
+		return 1
+	fi
+
 	if [[ "on" == "${__STATIC_LINK__}" ]]; then
-		clang -std="${__C_STD__}" -static "${__SRC_FILES__[@]}" -o "${__BIN_DIR__}/${__BIN_NAME__}"
+		"${__COMPILER__}" -std="${__C_STD__}" -static "${__SRC_FILES__[@]}" -o "${__BIN_DIR__}/${__BIN_NAME__}"
 	else
-		clang -std="${__C_STD__}" "${__SRC_FILES__[@]}" -o "${__BIN_DIR__}/${__BIN_NAME__}"
+		"${__COMPILER__}" -std="${__C_STD__}" "${__SRC_FILES__[@]}" -o "${__BIN_DIR__}/${__BIN_NAME__}"
 	fi
 
 	ret="${?}"
