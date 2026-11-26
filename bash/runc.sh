@@ -21,42 +21,42 @@
 # Compile C source files with clang and run the resulting binary.
 
 if [[ "${0}" != "${BASH_SOURCE[0]}" ]]; then
-	echo -e "ERROR: Usage bash runc.sh [flag] (options)"
+	echo -e "ERROR: Usage: bash runc.sh [flag] (options)"
 	return 1 &>/dev/null
 fi
 
-__BINF__="pubbin"
-__DIRF__="bin"
-__FILE__=()
-__FLAG__=1
-__APPOINT_F__="nof"
-__STATIC__="off"
-__EDIT__="off"
-__STD__="c23"
+__BIN_NAME__="pubbin"
+__BIN_DIR__="bin"
+__SRC_FILES__=()
+__PARSE_STATUS__=1
+__EDIT_FILE__="nof"
+__STATIC_LINK__="off"
+__EDIT_MODE__="off"
+__C_STD__="c23"
 
 ###############################################################################
 # __START:
-# ANSI highlight constant value define zone
+# ANSI highlight constant value definition zone
 # Define: 
 # reset, black, red, green, yellow, blue, purple, cyan, white
 
-__ANSI__="\033"
-__FONT__="[0;"
-__CHAR__="m"
+__ANSI_ESC__="\033"
+__ANSI_PREFIX__="[0;"
+__ANSI_SUFFIX__="m"
 
-readonly __ANSI__
-readonly __FONT__
-readonly __CHAR__
+readonly __ANSI_ESC__
+readonly __ANSI_PREFIX__
+readonly __ANSI_SUFFIX__
 
-__RESET__="${__ANSI__}${__FONT__}0${__CHAR__}"
-__BLACK__="${__ANSI__}${__FONT__}30${__CHAR__}"
-__RED__="${__ANSI__}${__FONT__}31${__CHAR__}"
-__GREEN__="${__ANSI__}${__FONT__}32${__CHAR__}"
-__YELLOW__="${__ANSI__}${__FONT__}33${__CHAR__}"
-__BLUE__="${__ANSI__}${__FONT__}34${__CHAR__}"
-__PURPLE__="${__ANSI__}${__FONT__}35${__CHAR__}"
-__CYAN__="${__ANSI__}${__FONT__}36${__CHAR__}"
-__WHITE__="${__ANSI__}${__FONT__}37${__CHAR__}"
+__RESET__="${__ANSI_ESC__}${__ANSI_PREFIX__}0${__ANSI_SUFFIX__}"
+__BLACK__="${__ANSI_ESC__}${__ANSI_PREFIX__}30${__ANSI_SUFFIX__}"
+__RED__="${__ANSI_ESC__}${__ANSI_PREFIX__}31${__ANSI_SUFFIX__}"
+__GREEN__="${__ANSI_ESC__}${__ANSI_PREFIX__}32${__ANSI_SUFFIX__}"
+__YELLOW__="${__ANSI_ESC__}${__ANSI_PREFIX__}33${__ANSI_SUFFIX__}"
+__BLUE__="${__ANSI_ESC__}${__ANSI_PREFIX__}34${__ANSI_SUFFIX__}"
+__PURPLE__="${__ANSI_ESC__}${__ANSI_PREFIX__}35${__ANSI_SUFFIX__}"
+__CYAN__="${__ANSI_ESC__}${__ANSI_PREFIX__}36${__ANSI_SUFFIX__}"
+__WHITE__="${__ANSI_ESC__}${__ANSI_PREFIX__}37${__ANSI_SUFFIX__}"
 
 readonly __RESET__
 readonly __BLACK__
@@ -73,18 +73,18 @@ readonly __WHITE__
 
 ##############################################################################
 #__START:
-#Define: constant -> messages level
+#Define: constant -> message levels
 #        INFO, ERROR, DONE, PANIC
 
 #IO Stream controller
-__IO_FILE__="$(pwd)/iofile.txt"
-__IO_TURN__="false"
+__IO_LOG_FILE__="$(pwd)/iofile.txt"
+__IO_LOG_ENABLED__="false"
 
 #######################################
 # Emit an INFO-level message with optional ANSI coloring and log-file write.
 # Globals:
-#   __IO_TURN__
-#   __IO_FILE__
+#   __IO_LOG_ENABLED__
+#   __IO_LOG_FILE__
 #   __GREEN__
 #   __CYAN__
 #   __RESET__
@@ -92,7 +92,7 @@ __IO_TURN__="false"
 #   $@: --color, --stder, --msgio <text>
 # Outputs:
 #   Writes "INFO : <text>" to stdout, or to stderr with --stder.
-#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#   Appends a plain line to $__IO_LOG_FILE__ when $__IO_LOG_ENABLED__ is "true".
 #######################################
 function io_info() {
 	local color="false"
@@ -138,16 +138,16 @@ function io_info() {
 		echo -e "${pfx_hc}INFO ${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
 	fi
 
-	if [[ "true" == "${__IO_TURN__}" ]]; then
-		echo -e "INFO : ${msgio}" >> "${__IO_FILE__}"
+	if [[ "true" == "${__IO_LOG_ENABLED__}" ]]; then
+		echo -e "INFO : ${msgio}" >> "${__IO_LOG_FILE__}"
 	fi
 }
 
 #######################################
 # Emit an ERROR-level message with optional ANSI coloring and log-file write.
 # Globals:
-#   __IO_TURN__
-#   __IO_FILE__
+#   __IO_LOG_ENABLED__
+#   __IO_LOG_FILE__
 #   __RED__
 #   __YELLOW__
 #   __RESET__
@@ -155,7 +155,7 @@ function io_info() {
 #   $@: --color, --stder, --msgio <text>
 # Outputs:
 #   Writes "ERROR: <text>" to stdout, or to stderr with --stder.
-#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#   Appends a plain line to $__IO_LOG_FILE__ when $__IO_LOG_ENABLED__ is "true".
 #######################################
 function io_error() {
 	local color="false"
@@ -201,16 +201,16 @@ function io_error() {
 		echo -e "${pfx_hc}ERROR${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
 	fi
 
-	if [[ "true" == "${__IO_TURN__}" ]]; then
-		echo -e "ERROR: ${msgio}" >> "${__IO_FILE__}"
+	if [[ "true" == "${__IO_LOG_ENABLED__}" ]]; then
+		echo -e "ERROR: ${msgio}" >> "${__IO_LOG_FILE__}"
 	fi
 }
 
 #######################################
 # Emit a PANIC-level message with optional ANSI coloring and log-file write.
 # Globals:
-#   __IO_TURN__
-#   __IO_FILE__
+#   __IO_LOG_ENABLED__
+#   __IO_LOG_FILE__
 #   __PURPLE__
 #   __RED__
 #   __RESET__
@@ -218,7 +218,7 @@ function io_error() {
 #   $@: --color, --stder, --msgio <text>
 # Outputs:
 #   Writes "PANIC: <text>" to stdout, or to stderr with --stder.
-#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#   Appends a plain line to $__IO_LOG_FILE__ when $__IO_LOG_ENABLED__ is "true".
 #######################################
 function io_panic() {
 	local color="false"
@@ -264,16 +264,16 @@ function io_panic() {
 		echo -e "${pfx_hc}PANIC${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
 	fi
 
-	if [[ "true" == "${__IO_TURN__}" ]]; then
-		echo -e "PANIC: ${msgio}" >> "${__IO_FILE__}"
+	if [[ "true" == "${__IO_LOG_ENABLED__}" ]]; then
+		echo -e "PANIC: ${msgio}" >> "${__IO_LOG_FILE__}"
 	fi
 }
 
 #######################################
 # Emit a DONE-level message with optional ANSI coloring and log-file write.
 # Globals:
-#   __IO_TURN__
-#   __IO_FILE__
+#   __IO_LOG_ENABLED__
+#   __IO_LOG_FILE__
 #   __BLUE__
 #   __GREEN__
 #   __RESET__
@@ -281,7 +281,7 @@ function io_panic() {
 #   $@: --color, --stder, --msgio <text>
 # Outputs:
 #   Writes "DONE : <text>" to stdout, or to stderr with --stder.
-#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#   Appends a plain line to $__IO_LOG_FILE__ when $__IO_LOG_ENABLED__ is "true".
 #######################################
 function io_done() {
 	local color="false"
@@ -327,8 +327,8 @@ function io_done() {
 		echo -e "${pfx_hc}DONE ${set_re}: ${pfx_bc}${msgio}${set_re}" >&2
 	fi
 
-	if [[ "true" == "${__IO_TURN__}" ]]; then
-		echo -e "DONE : ${msgio}" >> "${__IO_FILE__}"
+	if [[ "true" == "${__IO_LOG_ENABLED__}" ]]; then
+		echo -e "DONE : ${msgio}" >> "${__IO_LOG_FILE__}"
 	fi
 }
 
@@ -336,8 +336,8 @@ function io_done() {
 # Emit a continuation message (indented, no level tag) with optional body
 # coloring and log-file write.
 # Globals:
-#   __IO_TURN__
-#   __IO_FILE__
+#   __IO_LOG_ENABLED__
+#   __IO_LOG_FILE__
 #   __BLACK__
 #   __RED__
 #   __GREEN__
@@ -352,7 +352,7 @@ function io_done() {
 #       --stder, --msgio <text>
 # Outputs:
 #   Writes "       <text>" to stdout, or to stderr with --stder.
-#   Appends a plain line to $__IO_FILE__ when $__IO_TURN__ is "true".
+#   Appends a plain line to $__IO_LOG_FILE__ when $__IO_LOG_ENABLED__ is "true".
 #######################################
 function io_continue() {
 	local color="false"
@@ -429,11 +429,22 @@ function io_continue() {
 		echo -e "       ${pfx_bc}${msgio}${set_re}" >&2
 	fi
 
-	if [[ "true" == "${__IO_TURN__}" ]]; then
-		echo -e "       ${msgio}" >> "${__IO_FILE__}"
+	if [[ "true" == "${__IO_LOG_ENABLED__}" ]]; then
+		echo -e "       ${msgio}" >> "${__IO_LOG_FILE__}"
 	fi
 }
 
+#######################################
+# Emit a plain message line with optional purple ANSI coloring.
+# Globals:
+#   __PURPLE__
+#   __RESET__
+# Arguments:
+#   $1: "true" to colorize, any other value prints plain.
+#   $2: message text.
+# Outputs:
+#   Writes "<text>" to stdout, purple when $1 is "true".
+#######################################
 function ifmt() {
 	local color="${1}"
 	local msgio="${2}"
@@ -444,6 +455,16 @@ function ifmt() {
 	fi
 }
 
+#######################################
+# Print the help document with flags, example and output note.
+# Globals:
+#   __BIN_DIR__
+#   __BIN_NAME__
+# Arguments:
+#   None
+# Outputs:
+#   Writes the help document to stdout via io_info and ifmt.
+#######################################
 function help_doc() {
 	io_info --color --msgio "WELCOME TO RUNC.SH HELP DOC"
 	local color="true"
@@ -460,21 +481,21 @@ function help_doc() {
 	ifmt "${color}" ""
 	ifmt "${color}" "Example: bash runc.sh --file main.c --std 23 --edit main.c"
 	ifmt "${color}" ""
-	ifmt "${color}" "Output : ${__DIRF__}/${__BINF__}"
-	ifmt "${color}" "Note   : ${__DIRF__}/ must exist beforehand, the script never creates it"
+	ifmt "${color}" "Output : ${__BIN_DIR__}/${__BIN_NAME__}"
+	ifmt "${color}" "Note   : ${__BIN_DIR__}/ must exist beforehand; the script never creates it"
 }
 
 #######################################
 # Parse command-line arguments into global compile settings.
 # Globals:
-#   __FILE__
-#   __FLAG__
-#   __STATIC__
-#   __STD__
-#   __EDIT__
-#   __APPOINT_F__
-#   __IO_TURN__
-#   __IO_FILE__
+#   __SRC_FILES__
+#   __PARSE_STATUS__
+#   __STATIC_LINK__
+#   __C_STD__
+#   __EDIT_MODE__
+#   __EDIT_FILE__
+#   __IO_LOG_ENABLED__
+#   __IO_LOG_FILE__
 # Arguments:
 #   $@: --file/--f <src>..., --static on|off, --std 99|11|17|18|23,
 #       --edit/--e (file), --iofile/--iof
@@ -494,7 +515,7 @@ function parser() {
 					return 1
 				fi
 				while (( $# > 0 )) && [[ "${1}" != -* ]]; do
-					__FILE__+=("${1}")
+					__SRC_FILES__+=("${1}")
 					shift
 				done
 				;;
@@ -505,10 +526,10 @@ function parser() {
 				fi
 				shift
 				if [[ "${1}" != "on" && "${1}" != "off" ]]; then
-					io_error --color --msgio "--static ?, ?:{off/on}. But you provided is ${1}"
+					io_error --color --msgio "--static ?, ?:{off/on}. But you provided ${1}"
 					return 1
 				else
-					__STATIC__="${1}"
+					__STATIC_LINK__="${1}"
 					shift
 				fi
 				;;
@@ -519,24 +540,24 @@ function parser() {
 				fi
 				shift
 				if [[ "${1}" != "99" && "${1}" != "11" && "${1}" != "17" ]] && [[ "${1}" != "18" && "${1}" != "23" ]]; then
-					io_error --color --msgio "-std ?, ?:{99,11,17,18,23}. But you provided is ${1}"
+					io_error --color --msgio "--std ?, ?:{99,11,17,18,23}. But you provided ${1}"
 					return 1;
 				else
 					case "${1}" in
 						"99")
-							__STD__="c99"
+							__C_STD__="c99"
 							;;
 						"11")
-							__STD__="c11"
+							__C_STD__="c11"
 							;;
 						"17")
-							__STD__="c17"
+							__C_STD__="c17"
 							;;
 						"18")
-							__STD__="c18"
+							__C_STD__="c18"
 							;;
 						"*")
-							__STD__="c23"
+							__C_STD__="c23"
 							;;
 						esac
 					shift
@@ -545,43 +566,49 @@ function parser() {
 			--edit | --e)
 				if (( $# >= 2 )) && [[ "${2}" != -* ]]; then
 					shift
-					__APPOINT_F__="${1}"
+					__EDIT_FILE__="${1}"
 				fi
-				__EDIT__="on"
+				__EDIT_MODE__="on"
 				shift
 				;;
 			--iofile | --iof)
-				__IO_TURN__="true"
-				echo "" > "${__IO_FILE__}" # clean last log.
+				__IO_LOG_ENABLED__="true"
+				echo "" > "${__IO_LOG_FILE__}" # clean last log.
 				shift
 				;;
 			--help)
 				shift
 				help_doc
-				__FLAG__=2
+				__PARSE_STATUS__=2
 				return 1
 				;;
 			*)
 				io_panic --color --msgio "Unknown parameter :("
-				__FLAG__=1
+				__PARSE_STATUS__=1
 				return 1
 			;;
 	    esac
 	done
-	__FLAG__=0
-	io_done --color --msgio "settings: {compilation-std:${__STD__}}"
+	io_done --color --msgio "edit file: ${__EDIT_FILE__}"
+	io_done --color --msgio "settings : {compilation-std:${__C_STD__}}"
+	if (( ${#__SRC_FILES__} == 0 )); then
+		io_error --color --msgio "You must provide a compilable C file :( !"
+		__PARSE_STATUS__=1
+		return 1
+	fi
+	__PARSE_STATUS__=0
 }
 
 #######################################
 # Compile the collected C sources with clang and run the binary.
 # Globals:
-#   __BINF__
-#   __DIRF__
-#   __FILE__
-#   __STATIC__
-#   __STD__
-#   __EDIT__
-#   __APPOINT_F__
+#   __BIN_NAME__
+#   __BIN_DIR__
+#   __SRC_FILES__
+#   __STATIC_LINK__
+#   __C_STD__
+#   __EDIT_MODE__
+#   __EDIT_FILE__
 # Arguments:
 #   None
 # Outputs:
@@ -592,41 +619,41 @@ function runc() {
 
 	local ret
 
-	if [[ "on" == "${__EDIT__}" && "nof" == "${__APPOINT_F__}" ]]; then
-		nvim "${__FILE__[0]}"
-	elif [[ "on" == "${__EDIT__}" && "nof" != "${__APPOINT_F__}" ]]; then
+	if [[ "on" == "${__EDIT_MODE__}" && "nof" == "${__EDIT_FILE__}" ]]; then
+		nvim "${__SRC_FILES__[0]}"
+	elif [[ "on" == "${__EDIT_MODE__}" && "nof" != "${__EDIT_FILE__}" ]]; then
 		local flag_=1
-		for f in "${__FILE__[@]}"; do
-			if cmp -s "${__APPOINT_F__}" "${f}"; then
+		for f in "${__SRC_FILES__[@]}"; do
+			if cmp -s "${__EDIT_FILE__}" "${f}"; then
 				flag_=0
-				nvim "${__APPOINT_F__}"
+				nvim "${__EDIT_FILE__}"
 			fi
 		done
 		if [[ "1" == "${flag_}" ]]; then
-			io_panic --color --msgio "Can't found file ${__APPOINT_F__}"
+			io_panic --color --msgio "Can't find file ${__EDIT_FILE__}"
 			return 1
 		fi
 	fi
 
-	if [[ "on" == "${__STATIC__}" ]]; then
-		clang -std="${__STD__}" -static "${__FILE__[@]}" -o "${__DIRF__}/${__BINF__}"
+	if [[ "on" == "${__STATIC_LINK__}" ]]; then
+		clang -std="${__C_STD__}" -static "${__SRC_FILES__[@]}" -o "${__BIN_DIR__}/${__BIN_NAME__}"
 	else
-		clang -std="${__STD__}" "${__FILE__[@]}" -o "${__DIRF__}/${__BINF__}"
+		clang -std="${__C_STD__}" "${__SRC_FILES__[@]}" -o "${__BIN_DIR__}/${__BIN_NAME__}"
 	fi
 
 	ret="${?}"
 
 	if [[ 0 == "${ret}" ]]; then
-		"${__DIRF__}/${__BINF__}"
+		"${__BIN_DIR__}/${__BIN_NAME__}"
 	else
-		io_panic --color --msgio "Run ${__DIRF__}/${__BINF__} failed !"
+		io_panic --color --msgio "Running ${__BIN_DIR__}/${__BIN_NAME__} failed !"
 	fi
 }
 
 #######################################
 # Parse arguments, then compile and run the sources.
 # Globals:
-#   __FLAG__
+#   __PARSE_STATUS__
 # Arguments:
 #   $@: program options forwarded to parser.
 # Outputs:
@@ -636,20 +663,20 @@ function runc() {
 #######################################
 function main() {
 	if (( $# == 0 )); then
-		io_panic --color --msgio "You must provide optional parameters"
-		io_continue --color "red" --msgio "You can run 'bash runc.sh --help' get more help"
+		io_panic --color --msgio "You must provide at least one parameter"
+		io_continue --color "red" --msgio "You can run 'bash runc.sh --help' to get more help"
 		return 1
 	fi
 
 	parser "${@}"
 
-	if [[ $__FLAG__ -eq 2 ]]; then
+	if [[ $__PARSE_STATUS__ -eq 2 ]]; then
 		# If runc.sh --help ...... exit 0
 		return 1
 	fi
 
-	if [[ $__FLAG__ -ne 0 ]]; then
-		io_error --color --msgio "Current is uncompiliable qualification"
+	if [[ $__PARSE_STATUS__ -ne 0 ]]; then
+		io_error --color --msgio "Current configuration is not compilable"
 		return 1
 	fi
 
@@ -659,4 +686,4 @@ function main() {
 
 main "${@}"
 
-exit 0 # This is expected exit status '--contract-exit'
+exit 0 # This is the expected exit status '--contract-exit'
